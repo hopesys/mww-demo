@@ -6,25 +6,42 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-interface EmailOtpFormProps {
-  onSubmit: () => void;
+export interface EmailOtpFormProps {
+  onSendOtp: (email: string) => Promise<{ error?: string }>;
+  onVerifyOtp: (email: string, otp: string) => Promise<{ error?: string }>;
 }
 
-export function EmailOtpForm({ onSubmit }: EmailOtpFormProps): React.ReactElement {
+export function EmailOtpForm({ onSendOtp, onVerifyOtp }: EmailOtpFormProps): React.ReactElement {
   const [email, setEmail] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSendOtp(): void {
-    if (email.includes("@")) {
-      setOtpSent(true);
+  async function handleSendOtp(): Promise<void> {
+    if (!email.includes("@")) return;
+    setError(null);
+    setLoading(true);
+    const result = await onSendOtp(email);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
     }
+    setOtpSent(true);
   }
 
-  function handleVerify(): void {
-    if (otp.length === 6) {
-      onSubmit();
+  async function handleVerify(): Promise<void> {
+    if (otp.length !== 6) return;
+    setError(null);
+    setLoading(true);
+    const result = await onVerifyOtp(email, otp);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
     }
+    // Parent handles redirect after success
   }
 
   return (
@@ -44,18 +61,25 @@ export function EmailOtpForm({ onSubmit }: EmailOtpFormProps): React.ReactElemen
         </div>
       </div>
 
+      {error ? (
+        <p className="text-center text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
       {!otpSent ? (
         <Button
           onClick={handleSendOtp}
-          disabled={!email.includes("@")}
+          disabled={!email.includes("@") || loading}
           className="w-full bg-primary font-bold text-white"
         >
-          Send OTP
+          {loading ? "Sending…" : "Send OTP"}
         </Button>
       ) : (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email-otp">Enter 6-digit OTP</Label>
+            <Label htmlFor="email-otp">
+              กรอกรหัส 6 หลักที่ส่งไปยัง {email || "[อีเมล]"}
+            </Label>
             <Input
               id="email-otp"
               value={otp}
@@ -67,10 +91,10 @@ export function EmailOtpForm({ onSubmit }: EmailOtpFormProps): React.ReactElemen
           </div>
           <Button
             onClick={handleVerify}
-            disabled={otp.length !== 6}
+            disabled={otp.length !== 6 || loading}
             className="w-full bg-primary font-bold text-white"
           >
-            Verify & Sign In
+            {loading ? "Verifying…" : "Verify & Sign In"}
           </Button>
           <p className="text-center text-xs text-muted-foreground">
             Didn&apos;t receive code?{" "}

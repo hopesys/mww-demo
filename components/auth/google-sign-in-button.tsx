@@ -36,7 +36,7 @@ export function GoogleSignInButton({
           fill="#EA4335"
         />
       </svg>
-      {isLoading ? "Signing in..." : "Continue with Google"}
+      {isLoading ? "Signing in..." : "Sign in with Google"}
     </Button>
   );
 }

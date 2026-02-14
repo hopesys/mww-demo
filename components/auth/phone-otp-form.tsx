@@ -6,25 +6,45 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-interface PhoneOtpFormProps {
-  onSubmit: () => void;
+export interface PhoneOtpFormProps {
+  onSendOtp: (phone: string) => Promise<{ error?: string }>;
+  onVerifyOtp: (phone: string, otp: string) => Promise<{ error?: string }>;
 }
 
-export function PhoneOtpForm({ onSubmit }: PhoneOtpFormProps): React.ReactElement {
+export function PhoneOtpForm({ onSendOtp, onVerifyOtp }: PhoneOtpFormProps): React.ReactElement {
   const [phone, setPhone] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSendOtp(): void {
-    if (phone.length >= 10) {
-      setOtpSent(true);
+  async function handleSendOtp(): Promise<void> {
+    const normalized = phone.replace(/\D/g, "");
+    if (normalized.length < 10) return;
+    setError(null);
+    setLoading(true);
+    const result = await onSendOtp(phone.startsWith("+") ? phone : `+66${normalized}`);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
     }
+    setOtpSent(true);
   }
 
-  function handleVerify(): void {
-    if (otp.length === 6) {
-      onSubmit();
+  async function handleVerify(): Promise<void> {
+    if (otp.length !== 6) return;
+    const normalizedPhone = phone.replace(/\D/g, "");
+    const fullPhone = phone.startsWith("+") ? phone : `+66${normalizedPhone}`;
+    setError(null);
+    setLoading(true);
+    const result = await onVerifyOtp(fullPhone, otp);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
     }
+    // Parent handles redirect after success
   }
 
   return (
@@ -44,18 +64,25 @@ export function PhoneOtpForm({ onSubmit }: PhoneOtpFormProps): React.ReactElemen
         </div>
       </div>
 
+      {error ? (
+        <p className="text-center text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
       {!otpSent ? (
         <Button
           onClick={handleSendOtp}
-          disabled={phone.length < 10}
+          disabled={phone.replace(/\D/g, "").length < 10 || loading}
           className="w-full bg-primary font-bold text-white"
         >
-          Send OTP
+          {loading ? "Sending…" : "Send OTP"}
         </Button>
       ) : (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phone-otp">Enter 6-digit OTP</Label>
+            <Label htmlFor="phone-otp">
+              กรอกรหัส 6 หลักที่ส่งไปยัง {phone || "[เบอร์โทร]"}
+            </Label>
             <Input
               id="phone-otp"
               value={otp}
@@ -67,10 +94,10 @@ export function PhoneOtpForm({ onSubmit }: PhoneOtpFormProps): React.ReactElemen
           </div>
           <Button
             onClick={handleVerify}
-            disabled={otp.length !== 6}
+            disabled={otp.length !== 6 || loading}
             className="w-full bg-primary font-bold text-white"
           >
-            Verify & Sign In
+            {loading ? "Verifying…" : "Verify & Sign In"}
           </Button>
           <p className="text-center text-xs text-muted-foreground">
             Didn&apos;t receive code?{" "}
