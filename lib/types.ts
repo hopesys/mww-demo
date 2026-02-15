@@ -29,6 +29,15 @@ export interface Contestant {
   votes: number;
 }
 
+/** Row from mww_applications for voting (id, name_th, photo, vote_count, province) */
+export interface VotingContestantRow {
+  id: string;
+  name_th: string | null;
+  photo_full_url: string | null;
+  vote_count: number;
+  address_province: string | null;
+}
+
 export interface Pillar {
   icon: string;
   title: string;
