@@ -8,9 +8,86 @@ import { Separator } from "@/components/ui/separator";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { PhoneOtpForm } from "@/components/auth/phone-otp-form";
 import { EmailOtpForm } from "@/components/auth/email-otp-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
-type AuthMethod = "select" | "phone" | "email";
+type AuthMethod = "select" | "phone" | "email" | "email_password";
+
+function EmailPasswordForm({
+  onSubmit,
+  onBack,
+  isLoading,
+  setLoading,
+}: {
+  onSubmit: (email: string, password: string) => Promise<{ error?: string }>;
+  onBack: () => void;
+  isLoading: boolean;
+  setLoading: (v: boolean) => void;
+}): React.ReactElement {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!email.trim() || !password) {
+      setError("Please enter email and password.");
+      return;
+    }
+    setLoading(true);
+    const result = await onSubmit(email.trim(), password);
+    setLoading(false);
+    if (result.error) setError(result.error);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="admin-email">Email</Label>
+        <Input
+          id="admin-email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="admin@mww.local"
+          className="w-full"
+          disabled={isLoading}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="admin-password">Password</Label>
+        <Input
+          id="admin-password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full"
+          disabled={isLoading}
+        />
+      </div>
+      {error && (
+        <p className="text-center text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? "Signing in…" : "Sign in"}
+      </Button>
+      <button
+        type="button"
+        onClick={onBack}
+        className="w-full text-center text-sm text-muted-foreground hover:text-primary"
+      >
+        Back to sign in options
+      </button>
+    </form>
+  );
+}
 
 export default function LoginPage(): React.ReactElement {
   const searchParams = useSearchParams();
@@ -104,6 +181,22 @@ export default function LoginPage(): React.ReactElement {
     [safeRedirect]
   );
 
+  const handleEmailPasswordSignIn = useCallback(
+    async (email: string, password: string): Promise<{ error?: string }> => {
+      try {
+        const supabase = createClient();
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) return { error: error.message };
+        window.location.href = safeRedirect;
+        return {};
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "Sign in failed";
+        return { error: message };
+      }
+    },
+    [safeRedirect]
+  );
+
   return (
     <div className="w-full max-w-md rounded-2xl border border-white/10 bg-card p-8 shadow-2xl">
       <div className="mb-8 flex flex-col items-center gap-4 text-center">
@@ -148,6 +241,13 @@ export default function LoginPage(): React.ReactElement {
           >
             Continue with Email
           </button>
+          <button
+            type="button"
+            onClick={() => setMethod("email_password")}
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-border text-sm text-muted-foreground transition-colors hover:bg-secondary"
+          >
+            Admin (email + password)
+          </button>
         </div>
       )}
 
@@ -181,6 +281,15 @@ export default function LoginPage(): React.ReactElement {
             Back to sign in options
           </button>
         </div>
+      )}
+
+      {method === "email_password" && (
+        <EmailPasswordForm
+          onSubmit={handleEmailPasswordSignIn}
+          onBack={() => setMethod("select")}
+          isLoading={isLoading}
+          setLoading={setIsLoading}
+        />
       )}
 
       <p className="mt-8 text-center text-xs text-muted-foreground">
