@@ -1,8 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-
-const VOTE_AMOUNT = 1;
+import { VOTE_AMOUNT } from "@/lib/constants/voting";
 
 export type VoteResult =
   | { success: true; remainingCredits: number }
@@ -67,5 +66,3 @@ export async function submitVote(applicantId: string): Promise<VoteResult> {
     remainingCredits: Number(result.remaining_credits) ?? 0,
   };
 }
-
-export { VOTE_AMOUNT };

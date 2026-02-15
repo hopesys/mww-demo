@@ -53,7 +53,7 @@ function EmailPasswordForm({
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="admin@mww.local"
+          placeholder="admin@example.com"
           className="w-full"
           disabled={isLoading}
         />
@@ -186,7 +186,13 @@ export default function LoginPage(): React.ReactElement {
       try {
         const supabase = createClient();
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) return { error: error.message };
+        if (error) {
+          const msg =
+            error.code === "invalid_credentials"
+              ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง (Admin: รัน bun run create-admin แล้วใช้ admin@example.com / P@ssw0rd)"
+              : error.message;
+          return { error: msg };
+        }
         window.location.href = safeRedirect;
         return {};
       } catch (e) {

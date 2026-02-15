@@ -30,8 +30,9 @@ export async function middleware(request: NextRequest) {
 
   const isApply = request.nextUrl.pathname.startsWith("/apply");
   const isLogin = request.nextUrl.pathname.startsWith("/login");
+  const isAdmin = request.nextUrl.pathname.startsWith("/admin");
 
-  if (isApply && !user) {
+  if ((isApply || isAdmin) && !user) {
     const redirectTo = new URL("/login", request.url);
     redirectTo.searchParams.set("redirect", request.nextUrl.pathname);
     return NextResponse.redirect(redirectTo);
@@ -47,5 +48,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/apply/:path*", "/login"],
+  matcher: ["/apply/:path*", "/login", "/admin", "/admin/:path*"],
 };

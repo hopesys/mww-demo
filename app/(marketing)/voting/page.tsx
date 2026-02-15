@@ -8,7 +8,8 @@ import { VoteConfirmDialog } from "@/components/voting/vote-confirm-dialog";
 import { BuyCreditsSheet } from "@/components/voting/buy-credits-sheet";
 import { createClient } from "@/lib/supabase/client";
 import { mapRowToContestant } from "@/lib/data/voting-contestants";
-import { getVoteCredits, submitVote, VOTE_AMOUNT } from "./actions";
+import { getVoteCredits, submitVote } from "./actions";
+import { VOTE_AMOUNT } from "@/lib/constants/voting";
 import type { Contestant } from "@/lib/types";
 import { contestants as fallbackContestants } from "@/lib/data/contestants";
 

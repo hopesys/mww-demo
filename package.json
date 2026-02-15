@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
 "lint": "eslint",
-    "create-admin": "bun run --env-file=.env scripts/create-admin.ts"
+    "create-admin": "bun run --env-file=.env scripts/create-admin.ts",
+    "promote-admin": "bun run scripts/promote-admin.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
